@@ -24,6 +24,9 @@ class AttributeValue(object):
             self.value == other.value
         ])
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __repr__(self):
         return 'AttributeValue({}, {})'.format(self.name, self.value)
 
@@ -49,6 +52,9 @@ class Solution(object):
             }
             for attribute in attributes
         }
+
+    def copy(self):
+        return copy.deepcopy(self)
 
     def __str__(self):
         import yaml
@@ -87,6 +93,48 @@ class Solution(object):
             else:
                 # associate the attribute
                 self.__associations[attribute_value_from.name][attribute_value_from.value][attribute_value_to.name] = attribute_value_to.value
+
+    def infer(self):
+        attribute_names = self.__associations.keys()
+
+        while True:
+            inferred_pairs = []
+            attribute_names_checked = []
+
+            for attribute_name_a in attribute_names:
+                attribute_names_checked.append(attribute_name_a)
+
+                for attribute_name_b in attribute_names:
+                    # skip the already checked attributes (remember - it's a two-way mapping)
+                    if attribute_name_b not in attribute_names_checked:
+                        unassociated_values_a = self.__find_unassociated_values(attribute_name_a, attribute_name_b)
+
+                        # single leftover value - let's associate it!
+                        if len(unassociated_values_a) == 1:
+                            unassociated_values_b = self.__find_unassociated_values(attribute_name_b, attribute_name_a)
+                            assert len(unassociated_values_b) == 1
+
+                            unassociated_value_a = unassociated_values_a[0]
+                            unassociated_value_b = unassociated_values_b[0]
+
+                            inferred_pairs.append((
+                                AttributeValue(attribute_name_a, unassociated_value_a),
+                                AttributeValue(attribute_name_b, unassociated_value_b)
+                            ))
+
+            if len(inferred_pairs) == 0:
+                break
+
+            for attribute_value_a, attribute_value_b in inferred_pairs:
+                self.associate(attribute_value_a, attribute_value_b)
+
+    def __find_unassociated_values(self, attribute_name_from, attribute_name_to):
+        return [
+            attribute_value_from
+            for attribute_value_from in self.__associations[attribute_name_from]
+            if self.__associations[attribute_name_from][attribute_value_from][attribute_name_to] is None
+        ]
+
 
 #         attribute_a_index, attribute_a_category = Solution._index[attribute_a]
 #         attribute_b_index, attribute_b_category = Solution._index[attribute_b]
@@ -237,13 +285,23 @@ def main():
     solutions = [Solution(riddle_attributes)]
 
     solutions[0].associate(
-        AttributeValue('city', 'Dunwall'),
-        AttributeValue('drink', 'beer')
-    )
-    solutions[0].associate(
-        AttributeValue('city', 'Dunwall'),
+        AttributeValue('drink', 'beer'),
         AttributeValue('color', 'purple')
     )
+    solutions[0].associate(
+        AttributeValue('drink', 'rum'),
+        AttributeValue('color', 'red')
+    )
+    solutions[0].associate(
+        AttributeValue('drink', 'wine'),
+        AttributeValue('color', 'green')
+    )
+    solutions[0].associate(
+        AttributeValue('drink', 'whiskey'),
+        AttributeValue('color', 'white')
+    )
+
+    solutions[0].infer()
 
     print solutions[0]
 
