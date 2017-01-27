@@ -2,94 +2,22 @@
 
 import copy
 import itertools
-import numpy
 import sys
 
 
-class CategoryAlreadyAssociated(Exception):
+class AttributeTypeAlreadyAssociated(Exception):
     def __init__(self):
         Exception.__init__(self)
 
 
+class Attribute(object):
+    def __init__(self, name, values):
+        object.__init__(self)
+        self.name = name
+        self.values = values
+
+
 class Solution(object):
-    class Index(dict):
-        def __init__(self, categories):
-            attribute_to_category = {
-                category_attribute: category_index
-                for category_index, category_attributes in enumerate(categories)
-                for category_attribute in category_attributes
-                }
-            attributes = [
-                (attribute, (index, attribute_to_category[attribute]))
-                for index, attribute in enumerate(itertools.chain(*categories))
-                ]
-
-            dict.__init__(self, attributes)
-            self.__category_count = len(categories)
-
-        def attribute_count(self):
-            return len(self)
-
-        def category_count(self):
-            return self.__category_count
-
-    _names = [
-        'Lady Winslow',
-        'Doctor Marcolla',
-        'Countess Contee',
-        'Madam Natsiou',
-        'Baroness Finch'
-    ]
-
-    _heirlooms = [
-        'Diamond',
-        'Ring',
-        'Bird Pendant',
-        'War Medal',
-        'Snuff Tin'
-    ]
-
-    _colors = [
-        'purple',
-        'red',
-        'green',
-        'white',
-        'blue'
-    ]
-
-    _drinks = [
-        'beer',
-        'rum',
-        'wine',
-        'whiskey',
-        'absinthe'
-    ]
-
-    _cities = [
-        'Dunwall',
-        'Dabokva',
-        'Baleton',
-        'Fraeport',
-        'Karnaca'
-    ]
-
-    _seats = [
-        'leftmost',
-        'center-left',
-        'center',
-        'center-right',
-        'rightmost'
-    ]
-
-    _index = Index([
-        _names,
-        _heirlooms,
-        _colors,
-        _drinks,
-        _cities,
-        _seats
-    ])
-
     def __init__(self):
         object.__init__(self)
 
@@ -106,6 +34,9 @@ class Solution(object):
             self.__associated_categories[index][category] = True
 
     def associate(self, attribute_a, attribute_b):
+
+
+
         attribute_a_index, attribute_a_category = Solution._index[attribute_a]
         attribute_b_index, attribute_b_category = Solution._index[attribute_b]
 
@@ -113,7 +44,27 @@ class Solution(object):
             self.__associated_categories[attribute_a_index][attribute_b_category],
             self.__associated_categories[attribute_b_index][attribute_a_category]
         ]):
-            raise CategoryAlreadyAssociated()
+            raise AttributeTypeAlreadyAssociated()
+
+        self.__mapping[attribute_a_index][attribute_b_index] = True
+        self.__mapping[attribute_b_index][attribute_a_index] = True
+        self.__associated_categories[attribute_a_index][attribute_b_category] = True
+        self.__associated_categories[attribute_b_index][attribute_a_category] = True
+
+    def __associated_with(self, attribute):
+        return [
+
+        ]
+
+    def __associate_pair(self, attribute_a, attribute_b):
+        attribute_a_index, attribute_a_category = Solution._index[attribute_a]
+        attribute_b_index, attribute_b_category = Solution._index[attribute_b]
+
+        if any([
+            self.__associated_categories[attribute_a_index][attribute_b_category],
+            self.__associated_categories[attribute_b_index][attribute_a_category]
+        ]):
+            raise AttributeTypeAlreadyAssociated()
 
         self.__mapping[attribute_a_index][attribute_b_index] = True
         self.__mapping[attribute_b_index][attribute_a_index] = True
@@ -178,7 +129,7 @@ class Condition(object):
 
                     new_solutions.append(new_solution)
 
-                except CategoryAlreadyAssociated:
+                except AttributeTypeAlreadyAssociated:
                     pass
 
         return new_solutions
@@ -192,14 +143,47 @@ class Condition(object):
         ])
 
 
+
+
+
+# ==================================================================================================================== #
+
+attributes = [
+    Attribute(
+        'name',
+        ['Lady Winslow', 'Doctor Marcolla', 'Countess Contee', 'Madam Natsiou', 'Baroness Finch']
+    ),
+    Attribute(
+        'heirloom',
+        ['Diamond', 'Ring', 'Bird Pendant', 'War Medal', 'Snuff Tin']
+    ),
+    Attribute(
+        'color',
+        ['purple', 'red', 'green', 'white', 'blue']
+    ),
+    Attribute(
+        'drink',
+        ['beer', 'rum', 'wine', 'whiskey', 'absinthe']
+    ),
+    Attribute(
+        'city',
+        ['Dunwall', 'Dabokva', 'Baleton', 'Fraeport', 'Karnaca']
+    ),
+    Attribute(
+        'seat',
+        ['leftmost', 'center-left', 'center', 'center-right', 'rightmost']
+    )
+]
+
+
+conditions = [
+    Condition.is_same_person('Madam Natsiou', 'purple'),
+    Condition.is_same_person('Doctor Marcolla', 'Diamond')
+]
+
+
 def main():
-    conditions = [
-        Condition.is_same_person('Madam Natsiou', 'purple'),
-
-        Condition.is_same_person('Doctor Marcolla', 'Diamond')
-    ]
-
-    solutions = [Solution()]
+    solutions = [Solution(attributes)]
 
     for condition in conditions:
         solutions = condition.apply(solutions)
