@@ -12,6 +12,22 @@ class Attribute(object):
         self.values = values
 
 
+class AttributeValue(object):
+    def __init__(self, name, value):
+        object.__init__(self)
+        self.name = name
+        self.value = value
+
+    def __eq__(self, other):
+        return all([
+            self.name == other.name,
+            self.value == other.value
+        ])
+
+    def __repr__(self):
+        return 'AttributeValue({}, {})'.format(self.name, self.value)
+
+
 class AttributeValueAlreadyAssociated(Exception):
     def __init__(self):
         Exception.__init__(self)
@@ -38,7 +54,40 @@ class Solution(object):
         import yaml
         return yaml.dump(self.__associations)
 
-#     def associate(self, attribute_a, attribute_b):
+    def associate(self, attribute_value_a, attribute_value_b):
+        print self.__all_associated(attribute_value_a)
+        print self.__all_associated(attribute_value_b)
+
+        for associated_value_a in self.__all_associated(attribute_value_a):
+            for associated_value_b in self.__all_associated(attribute_value_b):
+                self.__associate_pair(associated_value_a, associated_value_b)
+
+    def __all_associated(self, attribute_value):
+        return [
+            AttributeValue(associated_attribute_name, associated_attribute_value)
+            for associated_attribute_name, associated_attribute_value
+            in self.__associations[attribute_value.name][attribute_value.value].iteritems()
+            if associated_attribute_value
+        ]
+
+    def __associate_pair(self, attribute_value_a, attribute_value_b):
+        self.__associate_pair_one_way(attribute_value_a, attribute_value_b)
+        self.__associate_pair_one_way(attribute_value_b, attribute_value_a)
+
+    def __associate_pair_one_way(self, attribute_value_from, attribute_value_to):
+        # check if attributes are different
+        if attribute_value_from != attribute_value_to:
+            current_association = self.__associations[attribute_value_from.name][attribute_value_from.value][attribute_value_to.name]
+
+            # check if the attribute is already associated
+            if current_association is not None:
+                # check if the attribute is associated to a different value
+                if current_association != attribute_value_to.value:
+                    raise AttributeValueAlreadyAssociated()
+            else:
+                # associate the attribute
+                self.__associations[attribute_value_from.name][attribute_value_from.value][attribute_value_to.name] = attribute_value_to.value
+
 #         attribute_a_index, attribute_a_category = Solution._index[attribute_a]
 #         attribute_b_index, attribute_b_category = Solution._index[attribute_b]
 #
@@ -150,7 +199,7 @@ class Solution(object):
 
 # ==================================================================================================================== #
 
-attributes = [
+riddle_attributes = [
     Attribute(
         'name',
         ['Lady Winslow', 'Doctor Marcolla', 'Countess Contee', 'Madam Natsiou', 'Baroness Finch']
@@ -185,7 +234,16 @@ attributes = [
 
 
 def main():
-    solutions = [Solution(attributes)]
+    solutions = [Solution(riddle_attributes)]
+
+    solutions[0].associate(
+        AttributeValue('city', 'Dunwall'),
+        AttributeValue('drink', 'beer')
+    )
+    solutions[0].associate(
+        AttributeValue('city', 'Dunwall'),
+        AttributeValue('color', 'purple')
+    )
 
     print solutions[0]
 
