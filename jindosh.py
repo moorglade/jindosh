@@ -93,12 +93,12 @@ class Solution(object):
     def __init__(self):
         object.__init__(self)
 
-        self.__mapping = numpy.zeros(
-            (Solution._index.attribute_count(), Solution._index.attribute_count()),
+        self.__mapping = numpy.eye(
+            Solution._index.attribute_count(),
             dtype=bool
         )
-        self.__associated_categories = numpy.eye(
-            Solution._index.attribute_count(),
+        self.__associated_categories = numpy.zeros(
+            (Solution._index.attribute_count(), Solution._index.category_count()),
             dtype=bool
         )
 
@@ -183,7 +183,6 @@ class Condition(object):
 
         return new_solutions
 
-
     @classmethod
     def is_same_person(cls, attribute_a, attribute_b):
         return cls([
@@ -191,8 +190,6 @@ class Condition(object):
                 cls.Association(attribute_a, attribute_b)
             ])
         ])
-
-
 
 
 def main():
