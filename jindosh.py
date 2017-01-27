@@ -59,6 +59,8 @@ class Solution(object):
         lines = []
 
         for attribute_name in self.__associations:
+            attribute_lines = []
+
             for attribute_value in self.__associations[attribute_name]:
                 associated_attribute_values = [
                     associated_attribute_value
@@ -67,13 +69,19 @@ class Solution(object):
                 ]
 
                 if len(associated_attribute_values) > 0:
-                    lines.append(' '.join([attribute_value, '|'] + associated_attribute_values))
+                    attribute_lines.append(' '.join([attribute_value, '\t|'] + associated_attribute_values))
 
-            lines.append('')
+            if len(attribute_lines) > 0:
+                lines.extend(attribute_lines)
+                lines.append('')
 
         return '\n'.join(lines)
 
+    def __attribute_names(self):
+        return self.__associations.iterkeys()
 
+    def __attribute_values(self, attribute_name):
+        return self.__associations[attribute_name].iterkeys()
 
     def associate(self, attribute_value_a, attribute_value_b):
         for associated_value_a in self.__all_associated(attribute_value_a):
@@ -107,32 +115,42 @@ class Solution(object):
                 self.__associations[attribute_value_from.name][attribute_value_from.value][attribute_value_to.name] = attribute_value_to.value
 
     def infer(self):
-        attribute_names = self.__associations.keys()
-
-        while True:
+         while True:
             inferred_pairs = []
-            attribute_names_checked = []
+            # attribute_names_checked = []
+            # TODO: optimize?
+            # attribute_names_checked.append(attribute_name_a)
 
-            for attribute_name_a in attribute_names:
-                attribute_names_checked.append(attribute_name_a)
+            for attribute_name_a in self.__attribute_names():
+                print 'att a', attribute_name_a
 
-                for attribute_name_b in attribute_names:
-                    # skip the already checked attributes (remember - it's a two-way mapping)
-                    if attribute_name_b not in attribute_names_checked:
-                        unassociated_values_a = self.__find_unassociated_values(attribute_name_a, attribute_name_b)
+                for attribute_value_a in self.__attribute_values(attribute_name_a):
+                    for attribute_name_b in self.__attribute_names():
 
-                        # single leftover value - let's associate it!
-                        if len(unassociated_values_a) == 1:
-                            unassociated_values_b = self.__find_unassociated_values(attribute_name_b, attribute_name_a)
-                            assert len(unassociated_values_b) == 1
+                        print 'att b', attribute_name_b
 
-                            unassociated_value_a = unassociated_values_a[0]
-                            unassociated_value_b = unassociated_values_b[0]
 
-                            inferred_pairs.append((
-                                AttributeValue(attribute_name_a, unassociated_value_a),
-                                AttributeValue(attribute_name_b, unassociated_value_b)
-                            ))
+                        if all([
+                            attribute_name_a != attribute_name_b,
+                            self.__associations[attribute_name_a][attribute_value_a][attribute_name_b] is None
+                        ]):
+                            attribute_possible_values = [
+                                attribute_value_b
+                                for attribute_value_b in self.__attribute_values(attribute_name_b)
+                                if self.__is_association_possible(
+                                    attribute_name_a, attribute_value_a,
+                                    attribute_name_b, attribute_value_b
+                                )
+                            ]
+
+                            # single leftover value - let's associate it!
+                            if len(attribute_possible_values) == 1:
+                                attribute_value_b = attribute_possible_values[0]
+
+                                inferred_pairs.append((
+                                    AttributeValue(attribute_name_a, attribute_value_a),
+                                    AttributeValue(attribute_name_b, attribute_value_b)
+                                ))
 
             if len(inferred_pairs) == 0:
                 break
@@ -140,12 +158,26 @@ class Solution(object):
             for attribute_value_a, attribute_value_b in inferred_pairs:
                 self.associate(attribute_value_a, attribute_value_b)
 
-    def __find_unassociated_values(self, attribute_name_from, attribute_name_to):
-        return [
-            attribute_value_from
-            for attribute_value_from in self.__associations[attribute_name_from]
-            if self.__associations[attribute_name_from][attribute_value_from][attribute_name_to] is None
-        ]
+    def __is_association_possible(self, attribute_name_a, attribute_value_a, attribute_name_b, attribute_value_b):
+        if all([
+            attribute_value_a == 'Lady Winslow',
+            attribute_value_b == 'purple',
+            self.__associations['color']['purple']['name'] == 'Madam Natsiou'
+        ]):
+            print 'hehe'
+
+        for attribute_name in self.__attribute_names():
+            attribute_value_associated_with_a = self.__associations[attribute_name_a][attribute_value_a][attribute_name]
+            attribute_value_associated_with_b = self.__associations[attribute_name_b][attribute_value_b][attribute_name]
+
+            if all([
+                attribute_value_associated_with_a is not None,
+                attribute_value_associated_with_b is not None,
+                attribute_value_associated_with_a != attribute_value_associated_with_b
+            ]):
+                return False
+
+        return True
 
 
 class Condition(object):
@@ -262,86 +294,81 @@ def main():
             AttributeValue('name', 'Madam Natsiou'),
             AttributeValue('color', 'purple')
         ),
-        # # Lady Winslow - far left
-        # is_same_person(
-        #     AttributeValue('name', 'Lady Winslow'),
-        #     AttributeValue('seat', 'leftmost')
-        # ),
-        # # Lady Winslow - next to red
-        # sit_next_to(
-        #     AttributeValue('name', 'Lady Winslow'),
-        #     AttributeValue('color', 'red')
-        # ),
-        # is_same_person(
-        #     AttributeValue('color', 'red'),
-        #     AttributeValue('seat', 'center-left')
-        # ),
-        #
-        # # green - left to white
-        # sit_left_right(
-        #     AttributeValue('color', 'green'),
-        #     AttributeValue('color', 'white')
-        # ),
-        # # green - beer
-        # is_same_person(
-        #     AttributeValue('color', 'green'),
-        #     AttributeValue('drink', 'beer')
-        # ),
-        # # Dunwall - blue
-        # is_same_person(
-        #     AttributeValue('city', 'Dunwall'),
-        #     AttributeValue('color', 'blue')
-        # ),
-        # # Ring - next to Dunwall
-        # sit_next_to(
-        #     AttributeValue('heirloom', 'Ring'),
-        #     AttributeValue('city', 'Dunwall')
-        # ),
-        # # Doctor Marcolla - Diamond
-        # is_same_person(
-        #     AttributeValue('name', 'Doctor Marcolla'),
-        #     AttributeValue('heirloom', 'Diamond')
-        # ),
-        # # Dabokva - War Medal
-        # is_same_person(
-        #     AttributeValue('city', 'Dabokva'),
-        #     AttributeValue('heirloom', 'War Medal')
-        # ),
-        # # Snuff Tin - next to Baleton
-        # sit_next_to(
-        #     AttributeValue('heirloom', 'Snuff Tin'),
-        #     AttributeValue('city', 'Baleton')
-        # ),
-        # # Baleton - next to rum
-        # sit_next_to(
-        #     AttributeValue('city', 'Baleton'),
-        #     AttributeValue('drink', 'rum')
-        # ),
-        # # unsure: Snuff Tin - Rum
-        # is_same_person(
-        #     AttributeValue('heirloom', 'Snuff Tin'),
-        #     AttributeValue('drink', 'rum')
-        # ),
-        # # Countess Contee - wine
-        # is_same_person(
-        #     AttributeValue('name', 'Countess Contee'),
-        #     AttributeValue('drink', 'wine')
-        # ),
-        # # Fraeport - whiskey
-        # is_same_person(
-        #     AttributeValue('city', 'Fraeport'),
-        #     AttributeValue('drink', 'whiskey')
-        # ),
-        # # center - absinthe
-        # is_same_person(
-        #     AttributeValue('seat', 'center'),
-        #     AttributeValue('drink', 'absinthe')
-        # ),
-        # # Baroness Finch - Karnaca
-        # is_same_person(
-        #     AttributeValue('name', 'Baroness Finch'),
-        #     AttributeValue('city', 'Karnaca')
-        # ),
+        # Lady Winslow - far left
+        is_same_person(
+            AttributeValue('name', 'Lady Winslow'),
+            AttributeValue('seat', 'leftmost')
+        ),
+        # Lady Winslow - next to red
+        sit_next_to(
+            AttributeValue('name', 'Lady Winslow'),
+            AttributeValue('color', 'red')
+        ),
+        # green - left to white
+        sit_left_right(
+            AttributeValue('color', 'green'),
+            AttributeValue('color', 'white')
+        ),
+        # green - beer
+        is_same_person(
+            AttributeValue('color', 'green'),
+            AttributeValue('drink', 'beer')
+        ),
+        # Dunwall - blue
+        is_same_person(
+            AttributeValue('city', 'Dunwall'),
+            AttributeValue('color', 'blue')
+        ),
+        # Ring - next to Dunwall
+        sit_next_to(
+            AttributeValue('heirloom', 'Ring'),
+            AttributeValue('city', 'Dunwall')
+        ),
+        # Doctor Marcolla - Diamond
+        is_same_person(
+            AttributeValue('name', 'Doctor Marcolla'),
+            AttributeValue('heirloom', 'Diamond')
+        ),
+        # Dabokva - War Medal
+        is_same_person(
+            AttributeValue('city', 'Dabokva'),
+            AttributeValue('heirloom', 'War Medal')
+        ),
+        # Snuff Tin - next to Baleton
+        sit_next_to(
+            AttributeValue('heirloom', 'Snuff Tin'),
+            AttributeValue('city', 'Baleton')
+        ),
+        # Baleton - next to rum
+        sit_next_to(
+            AttributeValue('city', 'Baleton'),
+            AttributeValue('drink', 'rum')
+        ),
+        # unsure: Snuff Tin - Rum
+        is_same_person(
+            AttributeValue('heirloom', 'Snuff Tin'),
+            AttributeValue('drink', 'rum')
+        ),
+        # Countess Contee - wine
+        is_same_person(
+            AttributeValue('name', 'Countess Contee'),
+            AttributeValue('drink', 'wine')
+        ),
+        # Fraeport - whiskey
+        is_same_person(
+            AttributeValue('city', 'Fraeport'),
+            AttributeValue('drink', 'whiskey')
+        ),
+        # center - absinthe
+        is_same_person(
+            AttributeValue('seat', 'center'),
+            AttributeValue('drink', 'absinthe')
+        ),
+        # Baroness Finch - Karnaca
+        is_same_person(
+            AttributeValue('name', 'Baroness Finch'),
+            AttributeValue('city', 'Karnaca')
+        )
     ]
 
     solutions = solve(attributes, conditions)
@@ -349,9 +376,8 @@ def main():
     print 'Found {} solution(s):'.format(len(solutions))
 
     for solution_index, solution in enumerate(solutions, 1):
-        print '{}.\n{}'.format(solution_index, solution)
-        #solution.printun()
-
+        print 'Solution {}:'.format(solution_index)
+        print solution
 
 if __name__ == '__main__':
     sys.exit(main())
