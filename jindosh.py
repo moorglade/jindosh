@@ -55,14 +55,28 @@ class Solution(object):
     def copy(self):
         return copy.deepcopy(self)
 
-    def __str__(self):
-        import yaml
-        return yaml.dump(self.__associations)
+    def __repr__(self):
+        lines = []
+
+        for attribute_name in self.__associations:
+            lines.append(attribute_name)
+
+            for attribute_value in self.__associations[attribute_name]:
+                lines.append(' '.join(
+                    [attribute_value, '|'] + [
+                        associated_attribute_value
+                        for associated_attribute_value in self.__associations[attribute_name][attribute_value].itervalues()
+                        if associated_attribute_value is not None and associated_attribute_value != attribute_value
+                    ]
+                ))
+
+            lines.append('')
+
+        return '\n'.join(lines)
+
+
 
     def associate(self, attribute_value_a, attribute_value_b):
-        print self.__all_associated(attribute_value_a)
-        print self.__all_associated(attribute_value_b)
-
         for associated_value_a in self.__all_associated(attribute_value_a):
             for associated_value_b in self.__all_associated(attribute_value_b):
                 self.__associate_pair(associated_value_a, associated_value_b)
@@ -166,6 +180,8 @@ class Condition(object):
                             association.attribute_value_b
                         )
 
+                    new_solution.infer()
+
                     new_solutions.append(new_solution)
 
                 except AttributeValueAlreadyAssociated:
@@ -179,9 +195,6 @@ def solve(attributes, conditions):
 
     for condition in conditions:
         solutions = condition.apply(solutions)
-
-    for solution in solutions:
-        solution.infer()
 
     return solutions
 
@@ -245,14 +258,91 @@ def main():
     ]
 
     conditions = [
+        # Madam Natsiou - purple
         is_same_person(
             AttributeValue('name', 'Madam Natsiou'),
             AttributeValue('color', 'purple')
         ),
+        # Lady Winslow - far left
+        is_same_person(
+            AttributeValue('name', 'Lady Winslow'),
+            AttributeValue('seat', 'leftmost')
+        ),
+        # Lady Winslow - next to red
+        sit_next_to(
+            AttributeValue('name', 'Lady Winslow'),
+            AttributeValue('color', 'red')
+        ),
+        is_same_person(
+            AttributeValue('color', 'red'),
+            AttributeValue('seat', 'center-left')
+        ),
+
+        # green - left to white
         sit_left_right(
-            AttributeValue('name', 'Madam Natsiou'),
+            AttributeValue('color', 'green'),
             AttributeValue('color', 'white')
-        )
+        ),
+        # green - beer
+        is_same_person(
+            AttributeValue('color', 'green'),
+            AttributeValue('drink', 'beer')
+        ),
+        # Dunwall - blue
+        is_same_person(
+            AttributeValue('city', 'Dunwall'),
+            AttributeValue('color', 'blue')
+        ),
+        # Ring - next to Dunwall
+        sit_next_to(
+            AttributeValue('heirloom', 'Ring'),
+            AttributeValue('city', 'Dunwall')
+        ),
+        # Doctor Marcolla - Diamond
+        is_same_person(
+            AttributeValue('name', 'Doctor Marcolla'),
+            AttributeValue('heirloom', 'Diamond')
+        ),
+        # Dabokva - War Medal
+        is_same_person(
+            AttributeValue('city', 'Dabokva'),
+            AttributeValue('heirloom', 'War Medal')
+        ),
+        # Snuff Tin - next to Baleton
+        sit_next_to(
+            AttributeValue('heirloom', 'Snuff Tin'),
+            AttributeValue('city', 'Baleton')
+        ),
+        # Baleton - next to rum
+        sit_next_to(
+            AttributeValue('city', 'Baleton'),
+            AttributeValue('drink', 'rum')
+        ),
+        # unsure: Snuff Tin - Rum
+        is_same_person(
+            AttributeValue('heirloom', 'Snuff Tin'),
+            AttributeValue('drink', 'rum')
+        ),
+        # Countess Contee - wine
+        is_same_person(
+            AttributeValue('name', 'Countess Contee'),
+            AttributeValue('drink', 'wine')
+        ),
+        # Fraeport - whiskey
+        is_same_person(
+            AttributeValue('city', 'Fraeport'),
+            AttributeValue('drink', 'whiskey')
+        ),
+        # center - absinthe
+        is_same_person(
+            AttributeValue('seat', 'center'),
+            AttributeValue('drink', 'absinthe')
+        ),
+        # Baroness Finch - Karnaca
+        is_same_person(
+            AttributeValue('name', 'Baroness Finch'),
+            AttributeValue('city', 'Karnaca')
+        ),
     ]
 
     solutions = solve(attributes, conditions)
@@ -260,7 +350,8 @@ def main():
     print 'Found {} solution(s):'.format(len(solutions))
 
     for solution_index, solution in enumerate(solutions, 1):
-        print '{}. {}'.format(solution_index, solution)
+        print '{}.\n{}'.format(solution_index, solution)
+        #solution.printun()
 
 
 if __name__ == '__main__':
