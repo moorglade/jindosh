@@ -59,16 +59,15 @@ class Solution(object):
         lines = []
 
         for attribute_name in self.__associations:
-            lines.append(attribute_name)
-
             for attribute_value in self.__associations[attribute_name]:
-                lines.append(' '.join(
-                    [attribute_value, '|'] + [
-                        associated_attribute_value
-                        for associated_attribute_value in self.__associations[attribute_name][attribute_value].itervalues()
-                        if associated_attribute_value is not None and associated_attribute_value != attribute_value
-                    ]
-                ))
+                associated_attribute_values = [
+                    associated_attribute_value
+                    for associated_attribute_value in self.__associations[attribute_name][attribute_value].itervalues()
+                    if associated_attribute_value is not None and associated_attribute_value != attribute_value
+                ]
+
+                if len(associated_attribute_values) > 0:
+                    lines.append(' '.join([attribute_value, '|'] + associated_attribute_values))
 
             lines.append('')
 
@@ -263,86 +262,86 @@ def main():
             AttributeValue('name', 'Madam Natsiou'),
             AttributeValue('color', 'purple')
         ),
-        # Lady Winslow - far left
-        is_same_person(
-            AttributeValue('name', 'Lady Winslow'),
-            AttributeValue('seat', 'leftmost')
-        ),
-        # Lady Winslow - next to red
-        sit_next_to(
-            AttributeValue('name', 'Lady Winslow'),
-            AttributeValue('color', 'red')
-        ),
-        is_same_person(
-            AttributeValue('color', 'red'),
-            AttributeValue('seat', 'center-left')
-        ),
-
-        # green - left to white
-        sit_left_right(
-            AttributeValue('color', 'green'),
-            AttributeValue('color', 'white')
-        ),
-        # green - beer
-        is_same_person(
-            AttributeValue('color', 'green'),
-            AttributeValue('drink', 'beer')
-        ),
-        # Dunwall - blue
-        is_same_person(
-            AttributeValue('city', 'Dunwall'),
-            AttributeValue('color', 'blue')
-        ),
-        # Ring - next to Dunwall
-        sit_next_to(
-            AttributeValue('heirloom', 'Ring'),
-            AttributeValue('city', 'Dunwall')
-        ),
-        # Doctor Marcolla - Diamond
-        is_same_person(
-            AttributeValue('name', 'Doctor Marcolla'),
-            AttributeValue('heirloom', 'Diamond')
-        ),
-        # Dabokva - War Medal
-        is_same_person(
-            AttributeValue('city', 'Dabokva'),
-            AttributeValue('heirloom', 'War Medal')
-        ),
-        # Snuff Tin - next to Baleton
-        sit_next_to(
-            AttributeValue('heirloom', 'Snuff Tin'),
-            AttributeValue('city', 'Baleton')
-        ),
-        # Baleton - next to rum
-        sit_next_to(
-            AttributeValue('city', 'Baleton'),
-            AttributeValue('drink', 'rum')
-        ),
-        # unsure: Snuff Tin - Rum
-        is_same_person(
-            AttributeValue('heirloom', 'Snuff Tin'),
-            AttributeValue('drink', 'rum')
-        ),
-        # Countess Contee - wine
-        is_same_person(
-            AttributeValue('name', 'Countess Contee'),
-            AttributeValue('drink', 'wine')
-        ),
-        # Fraeport - whiskey
-        is_same_person(
-            AttributeValue('city', 'Fraeport'),
-            AttributeValue('drink', 'whiskey')
-        ),
-        # center - absinthe
-        is_same_person(
-            AttributeValue('seat', 'center'),
-            AttributeValue('drink', 'absinthe')
-        ),
-        # Baroness Finch - Karnaca
-        is_same_person(
-            AttributeValue('name', 'Baroness Finch'),
-            AttributeValue('city', 'Karnaca')
-        ),
+        # # Lady Winslow - far left
+        # is_same_person(
+        #     AttributeValue('name', 'Lady Winslow'),
+        #     AttributeValue('seat', 'leftmost')
+        # ),
+        # # Lady Winslow - next to red
+        # sit_next_to(
+        #     AttributeValue('name', 'Lady Winslow'),
+        #     AttributeValue('color', 'red')
+        # ),
+        # is_same_person(
+        #     AttributeValue('color', 'red'),
+        #     AttributeValue('seat', 'center-left')
+        # ),
+        #
+        # # green - left to white
+        # sit_left_right(
+        #     AttributeValue('color', 'green'),
+        #     AttributeValue('color', 'white')
+        # ),
+        # # green - beer
+        # is_same_person(
+        #     AttributeValue('color', 'green'),
+        #     AttributeValue('drink', 'beer')
+        # ),
+        # # Dunwall - blue
+        # is_same_person(
+        #     AttributeValue('city', 'Dunwall'),
+        #     AttributeValue('color', 'blue')
+        # ),
+        # # Ring - next to Dunwall
+        # sit_next_to(
+        #     AttributeValue('heirloom', 'Ring'),
+        #     AttributeValue('city', 'Dunwall')
+        # ),
+        # # Doctor Marcolla - Diamond
+        # is_same_person(
+        #     AttributeValue('name', 'Doctor Marcolla'),
+        #     AttributeValue('heirloom', 'Diamond')
+        # ),
+        # # Dabokva - War Medal
+        # is_same_person(
+        #     AttributeValue('city', 'Dabokva'),
+        #     AttributeValue('heirloom', 'War Medal')
+        # ),
+        # # Snuff Tin - next to Baleton
+        # sit_next_to(
+        #     AttributeValue('heirloom', 'Snuff Tin'),
+        #     AttributeValue('city', 'Baleton')
+        # ),
+        # # Baleton - next to rum
+        # sit_next_to(
+        #     AttributeValue('city', 'Baleton'),
+        #     AttributeValue('drink', 'rum')
+        # ),
+        # # unsure: Snuff Tin - Rum
+        # is_same_person(
+        #     AttributeValue('heirloom', 'Snuff Tin'),
+        #     AttributeValue('drink', 'rum')
+        # ),
+        # # Countess Contee - wine
+        # is_same_person(
+        #     AttributeValue('name', 'Countess Contee'),
+        #     AttributeValue('drink', 'wine')
+        # ),
+        # # Fraeport - whiskey
+        # is_same_person(
+        #     AttributeValue('city', 'Fraeport'),
+        #     AttributeValue('drink', 'whiskey')
+        # ),
+        # # center - absinthe
+        # is_same_person(
+        #     AttributeValue('seat', 'center'),
+        #     AttributeValue('drink', 'absinthe')
+        # ),
+        # # Baroness Finch - Karnaca
+        # is_same_person(
+        #     AttributeValue('name', 'Baroness Finch'),
+        #     AttributeValue('city', 'Karnaca')
+        # ),
     ]
 
     solutions = solve(attributes, conditions)
