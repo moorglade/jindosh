@@ -5,9 +5,8 @@ import sys
 
 
 # -------------------------------------------------------------------------------------------------------------------- #
-# General riddle-solving apparatus                                                                                     #
+# General riddling apparatus                                                                                           #
 # -------------------------------------------------------------------------------------------------------------------- #
-
 
 class Attribute(object):
     def __init__(self, name, values):
@@ -96,9 +95,9 @@ class Solution(object):
     def __attribute_values(self, attribute_name):
         return self.__associations[attribute_name].iterkeys()
 
-    def associate(self, attribute_a_value, attribute_b_value):
-        for associated_value_a in self.__all_associated(attribute_a_value):
-            for associated_value_b in self.__all_associated(attribute_b_value):
+    def associate(self, attribute_value_a, attribute_value_b):
+        for associated_value_a in self.__all_associated(attribute_value_a):
+            for associated_value_b in self.__all_associated(attribute_value_b):
                 self.__associate_pair(associated_value_a, associated_value_b)
 
     def __all_associated(self, attribute_value):
@@ -109,19 +108,19 @@ class Solution(object):
             if associated_attribute_value
         ]
 
-    def __associate_pair(self, attribute_a_value, attribute_b_value):
-        self.__associate_pair_one_way(attribute_a_value, attribute_b_value)
-        self.__associate_pair_one_way(attribute_b_value, attribute_a_value)
+    def __associate_pair(self, attribute_value_a, attribute_value_b):
+        # check if attributes are different
+        if attribute_value_a != attribute_value_b:
+            self.__associate_pair_one_way(attribute_value_a, attribute_value_b)
+            self.__associate_pair_one_way(attribute_value_b, attribute_value_a)
 
     def __associate_pair_one_way(self, attribute_value_from, attribute_value_to):
-        # check if attributes are different
-        if attribute_value_from != attribute_value_to:
-            current_association = self.__associations[attribute_value_from.name][attribute_value_from.value][attribute_value_to.name]
+            current_association_value = self.__associations[attribute_value_from.name][attribute_value_from.value][attribute_value_to.name]
 
             # check if the attribute is already associated
-            if current_association is not None:
+            if current_association_value is not None:
                 # check if the attribute is associated to a different value
-                if current_association != attribute_value_to.value:
+                if current_association_value != attribute_value_to.value:
                     raise AttributeValueAlreadyAssociated()
             else:
                 # associate the attribute
