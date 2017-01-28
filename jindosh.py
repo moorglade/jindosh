@@ -4,6 +4,11 @@ import copy
 import sys
 
 
+# -------------------------------------------------------------------------------------------------------------------- #
+# General riddle-solving apparatus                                                                                     #
+# -------------------------------------------------------------------------------------------------------------------- #
+
+
 class Attribute(object):
     def __init__(self, name, values):
         object.__init__(self)
@@ -25,9 +30,6 @@ class AttributeValue(object):
 
     def __ne__(self, other):
         return not self.__eq__(other)
-
-    def __repr__(self):
-        return 'AttributeValue({}, {})'.format(self.name, self.value)
 
 
 class AttributeValueAlreadyAssociated(Exception):
@@ -56,20 +58,31 @@ class Solution(object):
         return copy.deepcopy(self)
 
     def __repr__(self):
+        attribute_names_sorted = sorted(self.__attribute_names())
+
         lines = []
 
-        for attribute_name in self.__associations:
+        for attribute_name in attribute_names_sorted:
             attribute_lines = []
 
-            for attribute_value in self.__associations[attribute_name]:
-                associated_attribute_values = [
-                    associated_attribute_value
-                    for associated_attribute_value in self.__associations[attribute_name][attribute_value].itervalues()
-                    if associated_attribute_value is not None and associated_attribute_value != attribute_value
-                ]
+            for attribute_value in sorted(self.__attribute_values(attribute_name)):
+                associated_attribute_values = []
+                for associated_attribute_name in attribute_names_sorted:
+                    if attribute_name != associated_attribute_name:
+                        associated_attribute_value = self.__associations[attribute_name][attribute_value][associated_attribute_name]
+                        if associated_attribute_value is not None:
+                            associated_attribute_values.append(associated_attribute_value)
 
                 if len(associated_attribute_values) > 0:
-                    attribute_lines.append(' '.join([attribute_value, '\t|'] + associated_attribute_values))
+                    attribute_line = \
+                        '{:<15} [ '.format(attribute_value).upper() \
+                        + ' | '.join([
+                            '{:<15}'.format(associated_attribute_value)
+                            for associated_attribute_value in associated_attribute_values
+                        ]) \
+                        + ']'
+
+                    attribute_lines.append(attribute_line)
 
             if len(attribute_lines) > 0:
                 lines.extend(attribute_lines)
@@ -83,9 +96,9 @@ class Solution(object):
     def __attribute_values(self, attribute_name):
         return self.__associations[attribute_name].iterkeys()
 
-    def associate(self, attribute_value_a, attribute_value_b):
-        for associated_value_a in self.__all_associated(attribute_value_a):
-            for associated_value_b in self.__all_associated(attribute_value_b):
+    def associate(self, attribute_a_value, attribute_b_value):
+        for associated_value_a in self.__all_associated(attribute_a_value):
+            for associated_value_b in self.__all_associated(attribute_b_value):
                 self.__associate_pair(associated_value_a, associated_value_b)
 
     def __all_associated(self, attribute_value):
@@ -96,9 +109,9 @@ class Solution(object):
             if associated_attribute_value
         ]
 
-    def __associate_pair(self, attribute_value_a, attribute_value_b):
-        self.__associate_pair_one_way(attribute_value_a, attribute_value_b)
-        self.__associate_pair_one_way(attribute_value_b, attribute_value_a)
+    def __associate_pair(self, attribute_a_value, attribute_b_value):
+        self.__associate_pair_one_way(attribute_a_value, attribute_b_value)
+        self.__associate_pair_one_way(attribute_b_value, attribute_a_value)
 
     def __associate_pair_one_way(self, attribute_value_from, attribute_value_to):
         # check if attributes are different
@@ -115,77 +128,68 @@ class Solution(object):
                 self.__associations[attribute_value_from.name][attribute_value_from.value][attribute_value_to.name] = attribute_value_to.value
 
     def infer(self):
-         while True:
+        while True:
             inferred_pairs = []
-            # attribute_names_checked = []
-            # TODO: optimize?
-            # attribute_names_checked.append(attribute_name_a)
+            attribute_names_checked = []
 
-            for attribute_name_a in self.__attribute_names():
-                print 'att a', attribute_name_a
+            for attribute_a_name in self.__attribute_names():
+                attribute_names_checked.append(attribute_a_name)
 
-                for attribute_value_a in self.__attribute_values(attribute_name_a):
-                    for attribute_name_b in self.__attribute_names():
-
-                        print 'att b', attribute_name_b
-
-
+                for attribute_a_value in self.__attribute_values(attribute_a_name):
+                    for attribute_b_name in self.__attribute_names():
                         if all([
-                            attribute_name_a != attribute_name_b,
-                            self.__associations[attribute_name_a][attribute_value_a][attribute_name_b] is None
+                            attribute_b_name not in attribute_names_checked,
+                            self.__associations[attribute_a_name][attribute_a_value][attribute_b_name] is None
                         ]):
-                            attribute_possible_values = [
-                                attribute_value_b
-                                for attribute_value_b in self.__attribute_values(attribute_name_b)
+                            attribute_b_possible_values = [
+                                attribute_b_value
+                                for attribute_b_value in self.__attribute_values(attribute_b_name)
                                 if self.__is_association_possible(
-                                    attribute_name_a, attribute_value_a,
-                                    attribute_name_b, attribute_value_b
+                                    attribute_a_name, attribute_a_value,
+                                    attribute_b_name, attribute_b_value
                                 )
                             ]
 
                             # single leftover value - let's associate it!
-                            if len(attribute_possible_values) == 1:
-                                attribute_value_b = attribute_possible_values[0]
+                            if len(attribute_b_possible_values) == 1:
+                                attribute_b_value = attribute_b_possible_values[0]
 
                                 inferred_pairs.append((
-                                    AttributeValue(attribute_name_a, attribute_value_a),
-                                    AttributeValue(attribute_name_b, attribute_value_b)
+                                    AttributeValue(attribute_a_name, attribute_a_value),
+                                    AttributeValue(attribute_b_name, attribute_b_value)
                                 ))
 
             if len(inferred_pairs) == 0:
+                # we're not inferring anything anymore
                 break
 
-            for attribute_value_a, attribute_value_b in inferred_pairs:
-                self.associate(attribute_value_a, attribute_value_b)
+            for attribute_a_value, attribute_b_value in inferred_pairs:
+                self.associate(attribute_a_value, attribute_b_value)
 
-    def __is_association_possible(self, attribute_name_a, attribute_value_a, attribute_name_b, attribute_value_b):
-        if all([
-            attribute_value_a == 'Lady Winslow',
-            attribute_value_b == 'purple',
-            self.__associations['color']['purple']['name'] == 'Madam Natsiou'
-        ]):
-            print 'hehe'
-
+    def __is_association_possible(self, attribute_a_name, attribute_a_value, attribute_b_name, attribute_b_value):
         for attribute_name in self.__attribute_names():
-            attribute_value_associated_with_a = self.__associations[attribute_name_a][attribute_value_a][attribute_name]
-            attribute_value_associated_with_b = self.__associations[attribute_name_b][attribute_value_b][attribute_name]
+            attribute_a_associated_value = self.__associations[attribute_a_name][attribute_a_value][attribute_name]
+            attribute_b_associated_value = self.__associations[attribute_b_name][attribute_b_value][attribute_name]
 
             if all([
-                attribute_value_associated_with_a is not None,
-                attribute_value_associated_with_b is not None,
-                attribute_value_associated_with_a != attribute_value_associated_with_b
+                attribute_a_associated_value is not None,
+                attribute_b_associated_value is not None,
+                attribute_a_associated_value != attribute_b_associated_value
             ]):
                 return False
 
         return True
 
+    def result(self, attribute_a_name, attribute_b_name):
+        pass
+
 
 class Condition(object):
     class Association(object):
-        def __init__(self, attribute_value_a, attribute_value_b):
+        def __init__(self, attribute_a_value, attribute_b_value):
             object.__init__(self)
-            self.attribute_value_a = attribute_value_a
-            self.attribute_value_b = attribute_value_b
+            self.attribute_a_value = attribute_a_value
+            self.attribute_b_value = attribute_b_value
 
     class Alternative(object):
         def __init__(self, associations):
@@ -207,8 +211,8 @@ class Condition(object):
                 try:
                     for association in alternative.associations:
                         new_solution.associate(
-                            association.attribute_value_a,
-                            association.attribute_value_b
+                            association.attribute_a_value,
+                            association.attribute_b_value
                         )
 
                     new_solution.infer()
@@ -230,13 +234,14 @@ def solve(attributes, conditions):
     return solutions
 
 
-# ==================================================================================================================== #
+# -------------------------------------------------------------------------------------------------------------------- #
+# Riddle-specific routines                                                                                             #
+# -------------------------------------------------------------------------------------------------------------------- #
 
-
-def is_same_person(attribute_value_a, attribute_value_b):
+def is_same_person(attribute_a_value, attribute_b_value):
     return Condition([
         Condition.Alternative([
-            Condition.Association(attribute_value_a, attribute_value_b)
+            Condition.Association(attribute_a_value, attribute_b_value)
         ])
     ])
 
@@ -253,9 +258,9 @@ def sit_left_right(attribute_value_left, attribute_value_right):
     ])
 
 
-def sit_next_to(attribute_value_a, attribute_value_b):
-    left_right_alternatives = sit_left_right(attribute_value_a, attribute_value_b).alternatives
-    right_left_alternatives = sit_left_right(attribute_value_b, attribute_value_a).alternatives
+def sit_next_to(attribute_a_value, attribute_b_value):
+    left_right_alternatives = sit_left_right(attribute_a_value, attribute_b_value).alternatives
+    right_left_alternatives = sit_left_right(attribute_b_value, attribute_a_value).alternatives
 
     return Condition(left_right_alternatives + right_left_alternatives)
 
@@ -344,7 +349,7 @@ def main():
             AttributeValue('city', 'Baleton'),
             AttributeValue('drink', 'rum')
         ),
-        # unsure: Snuff Tin - Rum
+        # unsure: Snuff Tin - rum
         is_same_person(
             AttributeValue('heirloom', 'Snuff Tin'),
             AttributeValue('drink', 'rum')
