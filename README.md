@@ -1,1 +1,1 @@
-# jindosh
+# General Jindosh Solver

@@ -269,6 +269,8 @@ def sit_next_to(attribute_a_value, attribute_b_value):
 
 
 def main():
+    # riddle attributes and rules - could be easily adapted for file input
+
     attributes = [
         Attribute(
             'name',
