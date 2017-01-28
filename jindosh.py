@@ -75,9 +75,9 @@ class Solution(object):
 
                 if len(associated_attribute_values) > 0:
                     attribute_line = \
-                        '{:<15} [ '.format(attribute_value).upper() \
+                        '{:<16} [ '.format(attribute_value).upper() \
                         + ' | '.join([
-                            '{:<15}'.format(associated_attribute_value)
+                            '{:<16}'.format(associated_attribute_value)
                             for associated_attribute_value in associated_attribute_values
                         ]) \
                         + ']'
@@ -181,7 +181,10 @@ class Solution(object):
         return True
 
     def result(self, attribute_a_name, attribute_b_name):
-        pass
+        return {
+            attribute_a_value: self.__associations[attribute_a_name][attribute_a_value][attribute_b_name]
+            for attribute_a_value in self.__attribute_values(attribute_a_name)
+        }
 
 
 class Condition(object):
@@ -247,7 +250,7 @@ def is_same_person(attribute_a_value, attribute_b_value):
 
 
 def sit_left_right(attribute_value_left, attribute_value_right):
-    seats_left_to_right = ['leftmost', 'center-left', 'center', 'center-right', 'rightmost']
+    seats_left_to_right = ['far left', 'center-left', 'center', 'center-right', 'far right']
 
     return Condition([
         Condition.Alternative([
@@ -289,7 +292,7 @@ def main():
         ),
         Attribute(
             'seat',
-            ['leftmost', 'center-left', 'center', 'center-right', 'rightmost']
+            ['far left', 'center-left', 'center', 'center-right', 'far right']
         )
     ]
 
@@ -302,7 +305,7 @@ def main():
         # Lady Winslow - far left
         is_same_person(
             AttributeValue('name', 'Lady Winslow'),
-            AttributeValue('seat', 'leftmost')
+            AttributeValue('seat', 'far left')
         ),
         # Lady Winslow - next to red
         sit_next_to(
@@ -379,10 +382,16 @@ def main():
     solutions = solve(attributes, conditions)
 
     print 'Found {} solution(s):'.format(len(solutions))
+    print
 
     for solution_index, solution in enumerate(solutions, 1):
         print 'Solution {}:'.format(solution_index)
-        print solution
+        print
+        result = solution.result('name', 'heirloom')
+        for attribute_a_value in sorted(result.keys()):
+            print '{:16}: {:16}'.format(attribute_a_value, result[attribute_a_value])
+        print
+
 
 if __name__ == '__main__':
     sys.exit(main())
